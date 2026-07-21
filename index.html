@@ -25,7 +25,7 @@
   <aside id="sidebar" class="sidebar">
     <div class="head">
       <h1>Mapa maszyn</h1>
-      <p>Mapa publiczna pod GitHub Pages. Wczytuje Excel <strong>12345.xlsx</strong> z tego samego folderu lub pozwala wgrać plik ręcznie.</p>
+      <p>Mapa publiczna pod GitHub Pages. Wczytuje Excel <strong>12345.xlsx</strong>; jeżeli są kolumny <strong>LAT</strong> i <strong>LON</strong>, punkty pojawiają się od razu bez geokodowania.</p>
       <div class="badge">Punkt startowy: Bolesława Gidzińskiego 23, 02-293 Warszawa</div>
     </div>
     <div class="toolbar">
@@ -37,6 +37,7 @@
       <div class="row"><button id="geocodeVisible" class="btn amber">Geokoduj widoczne</button><button id="geocodeAll" class="btn green">Geokoduj wszystkie</button></div>
       <div class="row"><button id="clearSelected" class="btn red">Wyczyść zaznaczone</button><button id="routeBtn" class="btn primary">Trasa Google</button></div>
       <div class="row"><button id="copyRoute" class="btn">Kopiuj link</button><button id="fitBtn" class="btn">Pokaż wszystkie</button></div>
+      <div class="row"><button id="exportGpsExcel" class="btn green">Pobierz Excel z GPS</button><button id="exportMissing" class="btn">Lista braków GPS</button></div>
     </div>
     <div id="list" class="list"></div>
     <div class="footer">Warstwy mapy pochodzą z publicznych kafli mapowych. Dokładność punktów zależy od jakości danych adresowych i wyniku geokodowania. Cache GPS zapisuje się lokalnie w przeglądarce.</div>
@@ -80,13 +81,21 @@ function parseWorkbook(wb){
   const hasOddzial = dataRows.some(r => r.length === headers.length + 1) || !headers.includes('Oddział');
   if(hasOddzial && headers[0].toLowerCase() === 'nr sklepu') headers = ['Oddział', ...headers];
   const idx = name => headers.findIndex(h => h.toLowerCase().replace(/\s+/g,' ') === name.toLowerCase());
+  const idxAny = names => { for (const name of names) { const pos = headers.findIndex(h => h.toLowerCase().replace(/\s+/g,' ') === name.toLowerCase()); if (pos >= 0) return pos; } return -1; };
   const iOdd = idx('Oddział'), iNrSk = idx('Nr sklepu'), iMiasto = idx('Miasto'), iKod = idx('Kod pocztowy'), iUlica = idx('Ulica'), iDost = idx('Data dostawy'), iMont = idx('Data montażu'), iZam = idx('Nr zamówienia'), iCsp = idx('CSP'), iWyk = idx('Wykonawca'), iMasz = idx('Nr Maszyny');
+  const iLat = idxAny(['LAT','Latitude','Szerokość','Szerokosc','Szerokość GPS','Szerokosc GPS']);
+  const iLon = idxAny(['LON','LNG','Longitude','Długość','Dlugosc','Długość GPS','Dlugosc GPS']);
   machines = dataRows.map((r, n) => {
     if(hasOddzial && r.length === headers.length-1) r = ['', ...r];
     const city = norm(r[iMiasto]); const postal = norm(r[iKod]); const street = norm(r[iUlica]);
     const machineNo = norm(r[iMasz]) || norm(r[r.length-1]);
     const shopNo = norm(r[iNrSk]);
-    return { id:'m'+n, oddzial:norm(r[iOdd]), nrSklepu:shopNo, miasto:city, kod:postal, ulica:street, dataDostawy:excelDate(r[iDost]), dataMontazu:excelDate(r[iMont]), nrZamowienia:norm(r[iZam]), csp:norm(r[iCsp]), wykonawca:norm(r[iWyk]), nrMaszyny:machineNo, address:norm([street, postal, city, 'Polska'].filter(Boolean).join(', ')), status:'pending' };
+    const rawLat = iLat >= 0 ? String(r[iLat] ?? '').replace(',', '.') : '';
+    const rawLon = iLon >= 0 ? String(r[iLon] ?? '').replace(',', '.') : '';
+    const lat = parseFloat(rawLat);
+    const lon = parseFloat(rawLon);
+    const hasGps = Number.isFinite(lat) && Number.isFinite(lon);
+    return { id:'m'+n, oddzial:norm(r[iOdd]), nrSklepu:shopNo, miasto:city, kod:postal, ulica:street, dataDostawy:excelDate(r[iDost]), dataMontazu:excelDate(r[iMont]), nrZamowienia:norm(r[iZam]), csp:norm(r[iCsp]), wykonawca:norm(r[iWyk]), nrMaszyny:machineNo, address:norm([street, postal, city, 'Polska'].filter(Boolean).join(', ')), lat:hasGps?lat:undefined, lon:hasGps?lon:undefined, status:hasGps?'geocoded':'pending' };
   }).filter(m => m.nrMaszyny || m.nrSklepu || m.miasto || m.ulica);
   machines.forEach(m => { const c = getCache(m.address); if(c && c.lat && c.lon){ m.lat=c.lat; m.lon=c.lon; m.status='geocoded'; } else if(c && c.failed){ m.status='failed'; } });
   fillCityFilter(); applyFilters(); fitAll();
@@ -146,8 +155,38 @@ $('geocodeVisible').addEventListener('click', ()=>geocodeList(filtered.filter(m=
 $('geocodeAll').addEventListener('click', ()=>geocodeList(machines.filter(m=>m.status!=='geocoded')));
 $('clearSelected').addEventListener('click', ()=>{selectedIds.clear(); applyFilters();});
 $('fitBtn').addEventListener('click', fitAll);
+
+function exportWorkbookWithGps(onlyMissing=false){
+  if(!machines.length){ alert('Najpierw wczytaj plik 12345.xlsx.'); return; }
+  const rows = machines
+    .filter(m => !onlyMissing || m.status !== 'geocoded')
+    .map(m => ({
+      'Oddział': m.oddzial,
+      'Nr sklepu': m.nrSklepu,
+      'Miasto': m.miasto,
+      'Kod pocztowy': m.kod,
+      'Ulica': m.ulica,
+      'Data dostawy': m.dataDostawy,
+      'Data montażu': m.dataMontazu,
+      'Nr zamówienia': m.nrZamowienia,
+      'CSP': m.csp,
+      'Wykonawca': m.wykonawca,
+      'Nr Maszyny': m.nrMaszyny,
+      'ADRES_DO_GEOKODOWANIA': m.address,
+      'LAT': m.status === 'geocoded' ? m.lat : '',
+      'LON': m.status === 'geocoded' ? m.lon : '',
+      'STATUS_GPS': m.status === 'geocoded' ? 'OK' : (m.status === 'failed' ? 'NIE_ZNALEZIONO' : 'DO_GEOKODOWANIA')
+    }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, onlyMissing ? 'Braki GPS' : 'Arkusz1');
+  XLSX.writeFile(wb, onlyMissing ? 'braki_GPS.xlsx' : '12345_z_GPS.xlsx');
+}
+
 $('routeBtn').addEventListener('click', ()=>{ const u=routeUrl(); if(u) window.open(u,'_blank','noopener'); else alert('Zaznacz punkty z GPS.'); });
 $('copyRoute').addEventListener('click', async ()=>{ const u=routeUrl(); if(!u) return alert('Zaznacz punkty z GPS.'); await navigator.clipboard.writeText(u); alert('Skopiowano link do trasy Google Maps.'); });
+$('exportGpsExcel').addEventListener('click', ()=>exportWorkbookWithGps(false));
+$('exportMissing').addEventListener('click', ()=>exportWorkbookWithGps(true));
 $('togglePanel').addEventListener('click', ()=>$('sidebar').classList.toggle('collapsed'));
 loadDefault();
 </script>
