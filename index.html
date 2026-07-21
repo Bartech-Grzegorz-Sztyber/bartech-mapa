@@ -4,14 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mapa maszyn - Bartech</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQYMdJY0kMmpFcD8+2uL0iTrUdd0BvA=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{--bg:#0f172a;--panel:#111827;--panel2:#172036;--text:#e5e7eb;--muted:#9ca3af;--brand:#22c55e;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--line:#334155;--white:#fff;}
     *{box-sizing:border-box} html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
     .app{display:grid;grid-template-columns:minmax(0,1fr) 430px;height:100vh;width:100vw;overflow:hidden}.map{height:100%;width:100%;}.sidebar{height:100vh;background:linear-gradient(180deg,var(--panel),#0b1220);border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:350px;box-shadow:-12px 0 28px rgba(0,0,0,.25);z-index:500}
     .head{padding:18px 18px 12px;border-bottom:1px solid var(--line)}.head h1{font-size:20px;margin:0 0 6px;font-weight:800;letter-spacing:.2px}.head p{font-size:12px;line-height:1.4;color:var(--muted);margin:0}.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;margin-top:10px;border:1px solid #246b45;background:#0d2f24;color:#bbf7d0;border-radius:999px;font-size:12px;font-weight:700}.toolbar{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:10px}.row{display:flex;gap:8px}.input,.select{width:100%;background:#0b1220;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 11px;font-size:13px;outline:none}.input:focus,.select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18)}.btn{appearance:none;border:1px solid var(--line);background:#172036;color:var(--text);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}.btn:hover{background:#1f2a44}.btn.primary{background:#1d4ed8;border-color:#2563eb}.btn.primary:hover{background:#2563eb}.btn.green{background:#047857;border-color:#059669}.btn.red{background:#7f1d1d;border-color:#b91c1c}.btn.amber{background:#92400e;border-color:#d97706}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:9px;text-align:center}.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}.drop{border:1px dashed #475569;background:#0b1220;border-radius:12px;padding:12px;text-align:center;color:var(--muted);font-size:12px}.drop strong{color:#e2e8f0}.list{overflow:auto;min-height:0;padding:8px}.item{border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.88);padding:12px;margin-bottom:8px;cursor:pointer;transition:.15s ease}.item:hover{background:#172036;border-color:#64748b}.item.active{border-color:#22c55e;background:rgba(20,83,45,.35)}.item.geocoded .dot{background:var(--brand)}.item.pending .dot{background:var(--amber)}.item.failed .dot{background:var(--red)}.item-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.machine{font-weight:850;font-size:15px}.shop{font-size:12px;color:var(--muted)}.dot{width:10px;height:10px;border-radius:999px;background:#64748b;display:inline-block;margin-right:7px}.meta{font-size:12px;color:#cbd5e1;line-height:1.45;margin-top:7px}.pill{display:inline-flex;padding:3px 7px;border:1px solid #334155;border-radius:999px;font-size:11px;color:#cbd5e1;margin:6px 5px 0 0}.footer{border-top:1px solid var(--line);padding:10px 14px;color:var(--muted);font-size:11px;line-height:1.35}.leaflet-popup-content{font-family:Inter,Segoe UI,Arial,sans-serif}.popup h3{margin:0 0 8px;font-size:15px}.popup p{margin:4px 0}.popup .pbtn{display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;padding:7px 9px;margin-top:7px;font-weight:700}.base-marker{background:#111827;border:2px solid #fff;border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.35)}.machine-marker{background:#2563eb;border:2px solid #fff;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.35)}.machine-marker.selected{background:#22c55e;transform:scale(1.12)}.machine-marker.hover{background:#f59e0b;transform:scale(1.12)}@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:absolute;right:0;top:0;width:88vw;max-width:430px}.sidebar.collapsed{transform:translateX(calc(100% - 42px))}.toggle{display:block}}.toggle{position:absolute;right:430px;top:14px;z-index:700;background:#111827;color:#fff;border:1px solid var(--line);border-radius:10px 0 0 10px;padding:10px;cursor:pointer;display:none}
+
+    .leaflet-container{background:#dbeafe;}
+    .leaflet-tile{max-width:none !important; max-height:none !important;}
+    .leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane > svg,.leaflet-pane > canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0;}
   </style>
 </head>
 <body>
@@ -56,6 +60,9 @@ const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager
 L.control.layers({'OpenStreetMap':osm,'Topograficzna':topo,'Czytelna Voyager':carto}).addTo(map);
 L.control.scale({imperial:false}).addTo(map);
 const baseIcon = L.divIcon({className:'base-marker',iconSize:[18,18]});
+
+setTimeout(() => map.invalidateSize(true), 250);
+window.addEventListener('resize', () => setTimeout(() => map.invalidateSize(true), 120));
 L.marker(START_COORDS,{icon:baseIcon}).addTo(map).bindPopup('<b>Punkt startowy i końcowy</b><br>'+START_ADDRESS);
 function excelDate(v){
   if(!v) return '';
@@ -129,7 +136,7 @@ function routeUrl(){
 }
 function escapeHtml(v){return norm(v).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
 async function loadArrayBuffer(buf){ const wb = XLSX.read(buf, {type:'array', cellDates:true}); parseWorkbook(wb); }
-async function loadDefault(){ try { const r = await fetch('12345.xlsx', {cache:'no-store'}); if(r.ok) await loadArrayBuffer(await r.arrayBuffer()); } catch(e){} }
+async function loadDefault(){ try { const r = await fetch('12345.xlsx', {cache:'no-store'}); if(r.ok){ await loadArrayBuffer(await r.arrayBuffer()); } else { console.warn('Nie znaleziono pliku 12345.xlsx w folderze strony. Wgraj go do repozytorium obok index.html albo wybierz ręcznie w panelu.'); } } catch(e){ console.warn('Nie udało się automatycznie wczytać 12345.xlsx. Możesz wgrać plik ręcznie w panelu.', e); } }
 $('fileInput').addEventListener('change', async e => { const f=e.target.files[0]; if(f) await loadArrayBuffer(await f.arrayBuffer()); });
 $('drop').addEventListener('dragover', e=>{e.preventDefault(); $('drop').style.borderColor='#22c55e';});
 $('drop').addEventListener('dragleave', ()=>$('drop').style.borderColor='#475569');
