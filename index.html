@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa maszyn - Bartech</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQYMdJY0kMmpFcD8+2uL0iTrUdd0BvA=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--panel2:#172036;--text:#e5e7eb;--muted:#9ca3af;--brand:#22c55e;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;--line:#334155;--white:#fff;}
+    *{box-sizing:border-box} html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
+    .app{display:grid;grid-template-columns:minmax(0,1fr) 430px;height:100vh;width:100vw;overflow:hidden}.map{height:100%;width:100%;}.sidebar{height:100vh;background:linear-gradient(180deg,var(--panel),#0b1220);border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:350px;box-shadow:-12px 0 28px rgba(0,0,0,.25);z-index:500}
+    .head{padding:18px 18px 12px;border-bottom:1px solid var(--line)}.head h1{font-size:20px;margin:0 0 6px;font-weight:800;letter-spacing:.2px}.head p{font-size:12px;line-height:1.4;color:var(--muted);margin:0}.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;margin-top:10px;border:1px solid #246b45;background:#0d2f24;color:#bbf7d0;border-radius:999px;font-size:12px;font-weight:700}.toolbar{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:10px}.row{display:flex;gap:8px}.input,.select{width:100%;background:#0b1220;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 11px;font-size:13px;outline:none}.input:focus,.select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18)}.btn{appearance:none;border:1px solid var(--line);background:#172036;color:var(--text);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}.btn:hover{background:#1f2a44}.btn.primary{background:#1d4ed8;border-color:#2563eb}.btn.primary:hover{background:#2563eb}.btn.green{background:#047857;border-color:#059669}.btn.red{background:#7f1d1d;border-color:#b91c1c}.btn.amber{background:#92400e;border-color:#d97706}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:9px;text-align:center}.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}.drop{border:1px dashed #475569;background:#0b1220;border-radius:12px;padding:12px;text-align:center;color:var(--muted);font-size:12px}.drop strong{color:#e2e8f0}.list{overflow:auto;min-height:0;padding:8px}.item{border:1px solid var(--line);border-radius:12px;background:rgba(15,23,42,.88);padding:12px;margin-bottom:8px;cursor:pointer;transition:.15s ease}.item:hover{background:#172036;border-color:#64748b}.item.active{border-color:#22c55e;background:rgba(20,83,45,.35)}.item.geocoded .dot{background:var(--brand)}.item.pending .dot{background:var(--amber)}.item.failed .dot{background:var(--red)}.item-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.machine{font-weight:850;font-size:15px}.shop{font-size:12px;color:var(--muted)}.dot{width:10px;height:10px;border-radius:999px;background:#64748b;display:inline-block;margin-right:7px}.meta{font-size:12px;color:#cbd5e1;line-height:1.45;margin-top:7px}.pill{display:inline-flex;padding:3px 7px;border:1px solid #334155;border-radius:999px;font-size:11px;color:#cbd5e1;margin:6px 5px 0 0}.footer{border-top:1px solid var(--line);padding:10px 14px;color:var(--muted);font-size:11px;line-height:1.35}.leaflet-popup-content{font-family:Inter,Segoe UI,Arial,sans-serif}.popup h3{margin:0 0 8px;font-size:15px}.popup p{margin:4px 0}.popup .pbtn{display:inline-block;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:8px;padding:7px 9px;margin-top:7px;font-weight:700}.base-marker{background:#111827;border:2px solid #fff;border-radius:999px;box-shadow:0 3px 10px rgba(0,0,0,.35)}.machine-marker{background:#2563eb;border:2px solid #fff;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.35)}.machine-marker.selected{background:#22c55e;transform:scale(1.12)}.machine-marker.hover{background:#f59e0b;transform:scale(1.12)}@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:absolute;right:0;top:0;width:88vw;max-width:430px}.sidebar.collapsed{transform:translateX(calc(100% - 42px))}.toggle{display:block}}.toggle{position:absolute;right:430px;top:14px;z-index:700;background:#111827;color:#fff;border:1px solid var(--line);border-radius:10px 0 0 10px;padding:10px;cursor:pointer;display:none}
+  </style>
+</head>
+<body>
+<div class="app">
+  <button class="toggle" id="togglePanel">☰</button>
+  <div id="map" class="map"></div>
+  <aside id="sidebar" class="sidebar">
+    <div class="head">
+      <h1>Mapa maszyn</h1>
+      <p>Mapa publiczna pod GitHub Pages. Wczytuje Excel <strong>12345.xlsx</strong> z tego samego folderu lub pozwala wgrać plik ręcznie.</p>
+      <div class="badge">Punkt startowy: Bolesława Gidzińskiego 23, 02-293 Warszawa</div>
+    </div>
+    <div class="toolbar">
+      <div id="drop" class="drop"><strong>Przeciągnij 12345.xlsx tutaj</strong><br/>albo umieść plik obok index.html na GitHub.</div>
+      <input id="fileInput" type="file" accept=".xlsx,.xls,.csv" class="input" />
+      <input id="search" class="input" placeholder="Szukaj: nr maszyny, miasto, adres, nr sklepu..." />
+      <div class="row"><select id="cityFilter" class="select"><option value="">Wszystkie miejscowości</option></select><select id="statusFilter" class="select"><option value="">Wszystkie punkty</option><option value="geocoded">Z GPS</option><option value="pending">Do geokodowania</option><option value="failed">Nie znaleziono</option></select></div>
+      <div class="stats"><div class="stat"><b id="totalCount">0</b><span>maszyn</span></div><div class="stat"><b id="geoCount">0</b><span>z GPS</span></div><div class="stat"><b id="selCount">0</b><span>zazn.</span></div></div>
+      <div class="row"><button id="geocodeVisible" class="btn amber">Geokoduj widoczne</button><button id="geocodeAll" class="btn green">Geokoduj wszystkie</button></div>
+      <div class="row"><button id="clearSelected" class="btn red">Wyczyść zaznaczone</button><button id="routeBtn" class="btn primary">Trasa Google</button></div>
+      <div class="row"><button id="copyRoute" class="btn">Kopiuj link</button><button id="fitBtn" class="btn">Pokaż wszystkie</button></div>
+    </div>
+    <div id="list" class="list"></div>
+    <div class="footer">Warstwy mapy pochodzą z publicznych kafli mapowych. Dokładność punktów zależy od jakości danych adresowych i wyniku geokodowania. Cache GPS zapisuje się lokalnie w przeglądarce.</div>
+  </aside>
+</div>
+<script>
+const START_ADDRESS = 'Bolesława Gidzińskiego 23, 02-293 Warszawa, Polska';
+const START_COORDS = [52.187912, 20.966658];
+let machines = [], filtered = [], markers = new Map(), selectedIds = new Set(), hoverId = null;
+let geocodeQueueRunning = false;
+const $ = id => document.getElementById(id);
+const norm = v => String(v ?? '').trim().replace(/\s+/g,' ');
+const cacheKey = a => 'geo:' + norm(a).toLowerCase();
+const getCache = a => { try { return JSON.parse(localStorage.getItem(cacheKey(a)) || 'null'); } catch { return null; } };
+const setCache = (a,val) => localStorage.setItem(cacheKey(a), JSON.stringify(val));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const map = L.map('map', { zoomControl:true }).setView([52.08, 19.35], 6);
+const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)' });
+const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors &copy; CARTO' });
+L.control.layers({'OpenStreetMap':osm,'Topograficzna':topo,'Czytelna Voyager':carto}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
+const baseIcon = L.divIcon({className:'base-marker',iconSize:[18,18]});
+L.marker(START_COORDS,{icon:baseIcon}).addTo(map).bindPopup('<b>Punkt startowy i końcowy</b><br>'+START_ADDRESS);
+function excelDate(v){
+  if(!v) return '';
+  if(v instanceof Date && !isNaN(v)) return v.toLocaleDateString('pl-PL');
+  if(typeof v === 'number' && v > 20000 && v < 60000){ const d = XLSX.SSF.parse_date_code(v); return d ? String(d.d).padStart(2,'0')+'.'+String(d.m).padStart(2,'0')+'.'+d.y : String(v); }
+  return norm(v);
+}
+function parseWorkbook(wb){
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+  let headerIdx = rows.findIndex(r => r.map(norm).some(x => x.toLowerCase()==='nr sklepu'));
+  if(headerIdx < 0) headerIdx = 0;
+  let headers = rows[headerIdx].map(norm);
+  let dataRows = rows.slice(headerIdx+1).filter(r => r.some(c => norm(c) !== ''));
+  const hasOddzial = dataRows.some(r => r.length === headers.length + 1) || !headers.includes('Oddział');
+  if(hasOddzial && headers[0].toLowerCase() === 'nr sklepu') headers = ['Oddział', ...headers];
+  const idx = name => headers.findIndex(h => h.toLowerCase().replace(/\s+/g,' ') === name.toLowerCase());
+  const iOdd = idx('Oddział'), iNrSk = idx('Nr sklepu'), iMiasto = idx('Miasto'), iKod = idx('Kod pocztowy'), iUlica = idx('Ulica'), iDost = idx('Data dostawy'), iMont = idx('Data montażu'), iZam = idx('Nr zamówienia'), iCsp = idx('CSP'), iWyk = idx('Wykonawca'), iMasz = idx('Nr Maszyny');
+  machines = dataRows.map((r, n) => {
+    if(hasOddzial && r.length === headers.length-1) r = ['', ...r];
+    const city = norm(r[iMiasto]); const postal = norm(r[iKod]); const street = norm(r[iUlica]);
+    const machineNo = norm(r[iMasz]) || norm(r[r.length-1]);
+    const shopNo = norm(r[iNrSk]);
+    return { id:'m'+n, oddzial:norm(r[iOdd]), nrSklepu:shopNo, miasto:city, kod:postal, ulica:street, dataDostawy:excelDate(r[iDost]), dataMontazu:excelDate(r[iMont]), nrZamowienia:norm(r[iZam]), csp:norm(r[iCsp]), wykonawca:norm(r[iWyk]), nrMaszyny:machineNo, address:norm([street, postal, city, 'Polska'].filter(Boolean).join(', ')), status:'pending' };
+  }).filter(m => m.nrMaszyny || m.nrSklepu || m.miasto || m.ulica);
+  machines.forEach(m => { const c = getCache(m.address); if(c && c.lat && c.lon){ m.lat=c.lat; m.lon=c.lon; m.status='geocoded'; } else if(c && c.failed){ m.status='failed'; } });
+  fillCityFilter(); applyFilters(); fitAll();
+}
+function fillCityFilter(){
+  const cities = [...new Set(machines.map(m=>m.miasto).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pl'));
+  $('cityFilter').innerHTML = '<option value="">Wszystkie miejscowości</option>' + cities.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
+}
+function applyFilters(){
+  const q = norm($('search').value).toLowerCase(); const city = $('cityFilter').value; const status = $('statusFilter').value;
+  filtered = machines.filter(m => (!city || m.miasto===city) && (!status || m.status===status) && (!q || [m.nrMaszyny,m.nrSklepu,m.miasto,m.ulica,m.kod,m.dataMontazu,m.oddzial].join(' ').toLowerCase().includes(q)));
+  renderList(); renderMarkers(); updateStats();
+}
+function updateStats(){ $('totalCount').textContent = machines.length; $('geoCount').textContent = machines.filter(m=>m.status==='geocoded').length; $('selCount').textContent = selectedIds.size; }
+function markerIcon(state){ return L.divIcon({className:'machine-marker '+(state||''), iconSize:[16,16]}); }
+function renderMarkers(){
+  markers.forEach((mk,id)=>{ if(!filtered.some(m=>m.id===id)) { map.removeLayer(mk); markers.delete(id); } });
+  filtered.filter(m=>m.status==='geocoded').forEach(m=>{
+    const state = selectedIds.has(m.id) ? 'selected' : (hoverId===m.id?'hover':'');
+    if(markers.has(m.id)){ markers.get(m.id).setIcon(markerIcon(state)); return; }
+    const mk = L.marker([m.lat,m.lon], {icon:markerIcon(state), title:`${m.nrMaszyny} ${m.miasto}`}).addTo(map);
+    mk.bindPopup(popupHtml(m)); mk.on('click',()=>toggleSelect(m.id)); mk.on('mouseover',()=>setHover(m.id,true)); mk.on('mouseout',()=>setHover(m.id,false)); markers.set(m.id,mk);
+  });
+}
+function renderList(){
+  $('list').innerHTML = filtered.map(m => `<div class="item ${selectedIds.has(m.id)?'active':''} ${m.status}" data-id="${m.id}"><div class="item-top"><div><span class="dot"></span><span class="machine">Nr maszyny: ${escapeHtml(m.nrMaszyny||'brak')}</span><div class="shop">Sklep: ${escapeHtml(m.nrSklepu||'brak')} • ${escapeHtml(m.oddzial||'')}</div></div><div class="shop">${m.status==='geocoded'?'GPS':m.status==='failed'?'brak GPS':'do GPS'}</div></div><div class="meta"><b>${escapeHtml(m.miasto||'brak miasta')}</b>, ${escapeHtml(m.kod)} ${escapeHtml(m.ulica)}<br>Data montażu: <b>${escapeHtml(m.dataMontazu||'brak')}</b></div><span class="pill">${escapeHtml(m.wykonawca||'wykonawca: brak')}</span><span class="pill">${escapeHtml(m.nrZamowienia||'zamówienie: brak')}</span></div>`).join('');
+  document.querySelectorAll('.item').forEach(el=>{ const id=el.dataset.id; el.addEventListener('mouseenter',()=>setHover(id,true)); el.addEventListener('mouseleave',()=>setHover(id,false)); el.addEventListener('click',()=>{ const m=machines.find(x=>x.id===id); if(m.status==='geocoded'){ toggleSelect(id); markers.get(id)?.openPopup(); } }); });
+}
+function popupHtml(m){ return `<div class="popup"><h3>Maszyna ${escapeHtml(m.nrMaszyny||'brak')}</h3><p><b>Sklep:</b> ${escapeHtml(m.nrSklepu||'brak')}</p><p><b>Adres:</b> ${escapeHtml([m.ulica,m.kod,m.miasto].filter(Boolean).join(', '))}</p><p><b>Data montażu:</b> ${escapeHtml(m.dataMontazu||'brak')}</p><p><b>Wykonawca:</b> ${escapeHtml(m.wykonawca||'brak')}</p><a class="pbtn" target="_blank" rel="noopener" href="${googleSingleRoute(m)}">Trasa z bazy Google Maps</a></div>`; }
+function googleSingleRoute(m){ return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(START_ADDRESS)+'&destination='+encodeURIComponent(m.address)+'&travelmode=driving'; }
+function setHover(id,on){ hoverId=on?id:null; renderMarkers(); }
+function toggleSelect(id){ selectedIds.has(id) ? selectedIds.delete(id) : selectedIds.add(id); renderList(); renderMarkers(); updateStats(); }
+function fitAll(){ const pts = machines.filter(m=>m.status==='geocoded').map(m=>[m.lat,m.lon]); if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(.12)); else map.setView([52.08,19.35],6); }
+async function geocodeMachine(m){
+  if(!m.address || m.status==='geocoded') return;
+  const cached = getCache(m.address); if(cached && cached.lat){ m.lat=cached.lat; m.lon=cached.lon; m.status='geocoded'; return; }
+  const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=0&countrycodes=pl&q=' + encodeURIComponent(m.address);
+  try { const res = await fetch(url, {headers:{'Accept':'application/json'}}); const data = await res.json(); if(data && data[0]){ m.lat = parseFloat(data[0].lat); m.lon = parseFloat(data[0].lon); m.status='geocoded'; setCache(m.address,{lat:m.lat, lon:m.lon}); } else { m.status='failed'; setCache(m.address,{failed:true}); } } catch(e){ m.status='failed'; }
+}
+async function geocodeList(list){ if(geocodeQueueRunning) return; geocodeQueueRunning = true; for(const m of list){ await geocodeMachine(m); applyFilters(); await sleep(1150); } geocodeQueueRunning = false; fitAll(); }
+function routeUrl(){
+  const selected = machines.filter(m=>selectedIds.has(m.id) && m.status==='geocoded');
+  if(!selected.length) return '';
+  const dst = selected.length===1 ? selected[0].address : START_ADDRESS;
+  const way = selected.map(m=>`${m.lat},${m.lon}`).concat([START_ADDRESS]);
+  return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(START_ADDRESS)+'&destination='+encodeURIComponent(dst)+'&waypoints='+encodeURIComponent(way.join('|'))+'&travelmode=driving';
+}
+function escapeHtml(v){return norm(v).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));}
+async function loadArrayBuffer(buf){ const wb = XLSX.read(buf, {type:'array', cellDates:true}); parseWorkbook(wb); }
+async function loadDefault(){ try { const r = await fetch('12345.xlsx', {cache:'no-store'}); if(r.ok) await loadArrayBuffer(await r.arrayBuffer()); } catch(e){} }
+$('fileInput').addEventListener('change', async e => { const f=e.target.files[0]; if(f) await loadArrayBuffer(await f.arrayBuffer()); });
+$('drop').addEventListener('dragover', e=>{e.preventDefault(); $('drop').style.borderColor='#22c55e';});
+$('drop').addEventListener('dragleave', ()=>$('drop').style.borderColor='#475569');
+$('drop').addEventListener('drop', async e=>{ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f) await loadArrayBuffer(await f.arrayBuffer()); });
+$('search').addEventListener('input', applyFilters); $('cityFilter').addEventListener('change', applyFilters); $('statusFilter').addEventListener('change', applyFilters);
+$('geocodeVisible').addEventListener('click', ()=>geocodeList(filtered.filter(m=>m.status!=='geocoded')));
+$('geocodeAll').addEventListener('click', ()=>geocodeList(machines.filter(m=>m.status!=='geocoded')));
+$('clearSelected').addEventListener('click', ()=>{selectedIds.clear(); applyFilters();});
+$('fitBtn').addEventListener('click', fitAll);
+$('routeBtn').addEventListener('click', ()=>{ const u=routeUrl(); if(u) window.open(u,'_blank','noopener'); else alert('Zaznacz punkty z GPS.'); });
+$('copyRoute').addEventListener('click', async ()=>{ const u=routeUrl(); if(!u) return alert('Zaznacz punkty z GPS.'); await navigator.clipboard.writeText(u); alert('Skopiowano link do trasy Google Maps.'); });
+$('togglePanel').addEventListener('click', ()=>$('sidebar').classList.toggle('collapsed'));
+loadDefault();
+</script>
+</body>
+</html>
